@@ -1,28 +1,29 @@
 --[[
-    سكربت تغيير الوقت مع واجهة GUI قابلة للسحب
-    يعمل في منفذ Roblox (Executor)
-    ضع الرقم ثم اضغط "تغيير الوقت"
+    سكربت Time Spoofer
+    يغير الوقت المعروض في أمر info (وقت البقاء في السيرفر)
+    الواجهة قابلة للسحب
 ]]
 
-local Lighting = game:GetService("Lighting")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 
 -- إنشاء الواجهة
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "TimeChangerGUI"
+ScreenGui.Name = "TimeSpooferGUI"
 ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 ScreenGui.IgnoreGuiInset = true
 
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 260, 0, 160)
-MainFrame.Position = UDim2.new(0.5, -130, 0.5, -80)
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
-MainFrame.Parent = ScreenGui
+local Frame = Instance.new("Frame")
+Frame.Name = "MainFrame"
+Frame.Size = UDim2.new(0, 260, 0, 160)
+Frame.Position = UDim2.new(0.5, -130, 0.5, -80)
+Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Parent = ScreenGui
 
 -- شريط العنوان للسحب
 local TitleBar = Instance.new("TextLabel")
@@ -30,39 +31,39 @@ TitleBar.Name = "TitleBar"
 TitleBar.Size = UDim2.new(1, 0, 0, 30)
 TitleBar.Position = UDim2.new(0, 0, 0, 0)
 TitleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
-TitleBar.Text = "⏱ تغيير الوقت - اسحب من هنا"
+TitleBar.Text = "⏱ Time Spoofer - اسحب"
 TitleBar.TextColor3 = Color3.new(1, 1, 1)
 TitleBar.Font = Enum.Font.SourceSansBold
 TitleBar.TextSize = 14
 TitleBar.Active = true
-TitleBar.Parent = MainFrame
+TitleBar.Parent = Frame
 
 -- خانة الكتابة
 local InputBox = Instance.new("TextBox")
 InputBox.Name = "InputBox"
 InputBox.Size = UDim2.new(1, -20, 0, 40)
 InputBox.Position = UDim2.new(0, 10, 0, 40)
-InputBox.PlaceholderText = "أدخل الوقت مثال: 100"
+InputBox.PlaceholderText = "أدخل الوقت (ساعات)"
 InputBox.Text = ""
 InputBox.BackgroundColor3 = Color3.new(1, 1, 1)
 InputBox.TextColor3 = Color3.new(0, 0, 0)
 InputBox.Font = Enum.Font.SourceSans
 InputBox.TextSize = 16
-InputBox.Parent = MainFrame
+InputBox.Parent = Frame
 
 -- زر التنفيذ
-local SetButton = Instance.new("TextButton")
-SetButton.Name = "SetButton"
-SetButton.Size = UDim2.new(1, -20, 0, 40)
-SetButton.Position = UDim2.new(0, 10, 0, 95)
-SetButton.Text = "تغيير الوقت"
-SetButton.BackgroundColor3 = Color3.fromRGB(0, 160, 255)
-SetButton.TextColor3 = Color3.new(1, 1, 1)
-SetButton.Font = Enum.Font.SourceSansBold
-SetButton.TextSize = 16
-SetButton.Parent = MainFrame
+local Button = Instance.new("TextButton")
+Button.Name = "SetButton"
+Button.Size = UDim2.new(1, -20, 0, 40)
+Button.Position = UDim2.new(0, 10, 0, 95)
+Button.Text = "تغيير الوقت"
+Button.BackgroundColor3 = Color3.fromRGB(0, 160, 255)
+Button.TextColor3 = Color3.new(1, 1, 1)
+Button.Font = Enum.Font.SourceSansBold
+Button.TextSize = 16
+Button.Parent = Frame
 
--- كائنات السحب
+-- نظام السحب
 local dragging = false
 local startMouse = nil
 local startFramePos = nil
@@ -71,14 +72,14 @@ TitleBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         startMouse = input.Position
-        startFramePos = MainFrame.Position
+        startFramePos = Frame.Position
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
     if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         local delta = input.Position - startMouse
-        MainFrame.Position = UDim2.new(
+        Frame.Position = UDim2.new(
             startFramePos.X.Scale,
             startFramePos.X.Offset + delta.X,
             startFramePos.Y.Scale,
@@ -94,33 +95,73 @@ UserInputService.InputEnded:Connect(function(input)
 end)
 
 -- وظيفة تغيير الوقت
-SetButton.MouseButton1Click:Connect(function()
+Button.MouseButton1Click:Connect(function()
     local value = tonumber(InputBox.Text)
     if not value then
         InputBox.PlaceholderText = "⚠️ أدخل رقم صحيح!"
         return
     end
 
-    -- تغيير وقت اللعبة (Lighting)
-    Lighting.ClockTime = value
-    Lighting:SetMinutesAfterMidnight(value)
+    local hours = value
+    local minutes = hours * 60
+    local seconds = hours * 3600
 
-    -- محاولة تعديل متغيرات سكربت انفنتي (عدّل الأسماء حسب سكربتك)
+    -- تعديل المتغيرات العالمية الشائعة
     if getgenv then
-        getgenv().Time = value
-        getgenv().time = value
-        getgenv().InfoTime = value
+        getgenv().TimeInServer = hours
+        getgenv().SessionTime = hours
+        getgenv().PlayTime = hours
+        getgenv().timePlayed = hours
+        getgenv().Time = hours
+        getgenv().time = hours
+        getgenv().InfoTime = hours
     end
-    _G.Time = value
-    _G.time = value
-    _G.InfoTime = value
-    shared.Time = value
-    shared.time = value
+    shared.TimeInServer = hours
+    shared.SessionTime = hours
+    shared.PlayTime = hours
+    shared.timePlayed = hours
+    shared.Time = hours
+    shared.time = hours
+    _G.TimeInServer = hours
+    _G.SessionTime = hours
+    _G.PlayTime = hours
+    _G.timePlayed = hours
+    _G.Time = hours
+    _G.time = hours
 
-    -- لو فيه دالة setTime في السكربت
-    if getgenv and getgenv().setTime then getgenv().setTime(value) end
-    if _G.setTime then _G.setTime(value) end
+    -- تعديل Attributes على اللاعب (بعض الألعاب تستخدمها)
+    if LocalPlayer then
+        LocalPlayer:SetAttribute("TimeInServer", hours)
+        LocalPlayer:SetAttribute("SessionTime", hours)
+        LocalPlayer:SetAttribute("PlayTime", hours)
+        LocalPlayer:SetAttribute("timePlayed", hours)
+        LocalPlayer:SetAttribute("Time", hours)
+    end
 
-    InputBox.PlaceholderText = "✅ تم تغيير الوقت إلى " .. value
+    -- تعديل leaderstats إذا وجد فيها وقت
+    if LocalPlayer then
+        local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
+        if leaderstats then
+            for _, stat in pairs(leaderstats:GetChildren()) do
+                local lowerName = string.lower(stat.Name)
+                if lowerName:find("time") or lowerName:find("hour") or lowerName:find("play") then
+                    if stat:IsA("IntValue") or stat:IsA("NumberValue") then
+                        stat.Value = hours
+                    end
+                end
+            end
+        end
+    end
+
+    -- محاولة تعديل وقت السيرفر (بعض السكربتات تقرأه)
+    if workspace:FindFirstChild("DistributedGameTime") then
+        workspace.DistributedGameTime = seconds
+    end
+
+    -- لو فيه دالة setTime مشهورة
+    if getgenv and getgenv().setTime then getgenv().setTime(hours) end
+    if _G.setTime then _G.setTime(hours) end
+
+    InputBox.PlaceholderText = "✅ تم تغيير الوقت إلى " .. hours .. " ساعة"
     InputBox.Text = ""
 end)
